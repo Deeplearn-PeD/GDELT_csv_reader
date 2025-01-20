@@ -21,7 +21,7 @@ CHUNK_SIZE = 100000  # Number of rows to process at a time
 DB_CONFIG = {
     'dbname': 'gdelt_raw',
     'user': 'postgres',
-    'password': 'postgres',
+    'password': 'eueueu',
     'host': 'localhost',
     'port': 5432
 }

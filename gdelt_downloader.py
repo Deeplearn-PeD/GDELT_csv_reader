@@ -2,11 +2,15 @@ import os
 import psycopg2
 import psycopg2.extras
 import requests
+from requests.exceptions import HTTPError
 import pandas as pd
 from pathlib import Path
 from typing import List, Optional
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
+import loguru
+
+logger = loguru.logger
 
 from config import (
     MASTER_FILE_URL,
@@ -61,8 +65,11 @@ class GDELTDownloader:
 
         # Download and process the file
         local_path = DATA_DIR / Path(file_url).name
-        self._download_file(file_url, local_path)
-        self._process_csv(local_path, file_type)
+        try:
+            self._download_file(file_url, local_path)
+            self._process_csv(local_path, file_type)
+        except HTTPError as e:
+            logger.error(f"Error downloading {file_url}: {e}")
 
     def _get_file_type(self, file_url: str) -> Optional[str]:
         """Determine file type based on URL"""
