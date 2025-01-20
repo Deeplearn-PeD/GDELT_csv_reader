@@ -86,27 +86,35 @@ class GDELTDownloader:
     def _process_csv(self, file_path: Path, table_name: str):
         """Process CSV file and insert into database"""
         print(f"Processing {file_path.name}...")
-        for chunk in pd.read_csv(
-            file_path,
-            sep='\t',
-            header=None,
-            chunksize=CHUNK_SIZE,
-            low_memory=False
-        ):
-            # Convert DataFrame to list of tuples
-            tuples = [tuple(x) for x in chunk.to_numpy()]
-            cols = ','.join([f'col{i}' for i in range(1, len(chunk.columns)+1)])
-            
-            # Generate the SQL query
-            query = f"INSERT INTO {table_name} VALUES %s ON CONFLICT DO NOTHING"
-            psycopg2.extras.execute_values(
-                self.cur,
-                query,
-                tuples,
-                template=None,
-                page_size=CHUNK_SIZE
-            )
-            self.conn.commit()
+        try:
+            for chunk in pd.read_csv(
+                file_path,
+                sep='\t',
+                header=None,
+                chunksize=CHUNK_SIZE,
+                low_memory=False
+            ):
+                # Convert DataFrame to list of tuples
+                tuples = [tuple(x) for x in chunk.to_numpy()]
+                
+                # Generate the SQL query
+                query = f"INSERT INTO {table_name} VALUES %s ON CONFLICT DO NOTHING"
+                try:
+                    psycopg2.extras.execute_values(
+                        self.cur,
+                        query,
+                        tuples,
+                        template=None,
+                        page_size=CHUNK_SIZE
+                    )
+                    self.conn.commit()
+                except psycopg2.Error as e:
+                    print(f"Error processing chunk: {e}")
+                    self.conn.rollback()  # Rollback the failed transaction
+                    continue  # Skip to next chunk
+        except Exception as e:
+            print(f"Error processing file {file_path.name}: {e}")
+            self.conn.rollback()
 
     def run(self):
         """Main execution method"""
