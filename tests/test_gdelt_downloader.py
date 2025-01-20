@@ -2,19 +2,24 @@ import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 import pandas as pd
-import duckdb
+import psycopg2
 
 from gdelt_downloader import GDELTDownloader
-from config import DATA_DIR, DB_PATH
+from config import DATA_DIR, DB_CONFIG
 from db_schema import EVENTS_SCHEMA, MENTIONS_SCHEMA, GKG_SCHEMA
 
 @pytest.fixture
 def mock_downloader():
     """Fixture to create a GDELTDownloader instance with mocked dependencies"""
     with patch('gdelt_downloader.requests') as mock_requests, \
-            patch('gdelt_downloader.duckdb.connect') as mock_db:
+         patch('gdelt_downloader.psycopg2.connect') as mock_db:
+        mock_conn = MagicMock()
+        mock_cur = MagicMock()
+        mock_db.return_value = mock_conn
+        mock_conn.cursor.return_value = mock_cur
+        
         downloader = GDELTDownloader()
-        yield downloader, mock_requests, mock_db
+        yield downloader, mock_requests, mock_conn, mock_cur
 
 def test_setup_directories(tmp_path, mock_downloader):
     """Test directory creation"""

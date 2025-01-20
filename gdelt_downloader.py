@@ -1,5 +1,6 @@
 import os
-import duckdb
+import psycopg2
+import psycopg2.extras
 import requests
 import pandas as pd
 from pathlib import Path
@@ -10,17 +11,18 @@ from tqdm import tqdm
 from config import (
     MASTER_FILE_URL,
     BASE_DOWNLOAD_URL,
-    DB_PATH,
     DATA_DIR,
     FILE_TYPES,
-    CHUNK_SIZE
+    CHUNK_SIZE,
+    DB_CONFIG
 )
 from db_schema import EVENTS_SCHEMA, MENTIONS_SCHEMA, GKG_SCHEMA
 
 class GDELTDownloader:
     def __init__(self):
         self._setup_directories()
-        self.conn = duckdb.connect(str(DB_PATH))
+        self.conn = psycopg2.connect(**DB_CONFIG)
+        self.cur = self.conn.cursor()
         self._create_tables()
 
     def _setup_directories(self):
@@ -30,9 +32,14 @@ class GDELTDownloader:
     def _create_tables(self):
         """Create database tables based on schemas"""
         for schema in [EVENTS_SCHEMA, MENTIONS_SCHEMA, GKG_SCHEMA]:
-            self.conn.execute(
-                f"CREATE TABLE IF NOT EXISTS {schema.name} ({', '.join(schema.columns)})"
-            )
+            create_sql = f"""
+                CREATE TABLE IF NOT EXISTS {schema.name} (
+                    {', '.join(schema.columns)},
+                    PRIMARY KEY ({schema.primary_key})
+                )
+            """
+            self.cur.execute(create_sql)
+        self.conn.commit()
 
     def get_master_file(self) -> List[str]:
         """Download and parse the master file list"""
@@ -86,9 +93,20 @@ class GDELTDownloader:
             chunksize=CHUNK_SIZE,
             low_memory=False
         ):
-            self.conn.execute(
-                f"INSERT INTO {table_name} SELECT * FROM chunk"
+            # Convert DataFrame to list of tuples
+            tuples = [tuple(x) for x in chunk.to_numpy()]
+            cols = ','.join([f'col{i}' for i in range(1, len(chunk.columns)+1)])
+            
+            # Generate the SQL query
+            query = f"INSERT INTO {table_name} VALUES %s ON CONFLICT DO NOTHING"
+            psycopg2.extras.execute_values(
+                self.cur,
+                query,
+                tuples,
+                template=None,
+                page_size=CHUNK_SIZE
             )
+            self.conn.commit()
 
     def run(self):
         """Main execution method"""
@@ -97,6 +115,7 @@ class GDELTDownloader:
             with ThreadPoolExecutor() as executor:
                 list(tqdm(executor.map(self.process_file, files), total=len(files)))
         finally:
+            self.cur.close()
             self.conn.close()
 
 if __name__ == "__main__":
