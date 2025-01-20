@@ -10,9 +10,11 @@ dependencies = [
     "matplotlib>=3.10.0",
     "pandas>=2.2.3",
     "psycopg2>=2.9.10",
+    "requests>=2.32.3",
     "seaborn>=0.13.2",
     "sqlalchemy>=2.0.37",
     "sqlmodel>=0.0.22",
+    "tqdm>=4.67.1",
     "wget>=3.2",
 ]
 
@@ -20,4 +22,6 @@ dependencies = [
 dev-dependencies = [
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",
+    "aider-chat>=0.71.1",
+    "pytest-mock>=3.14.0",
 ]
