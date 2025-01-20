@@ -123,12 +123,48 @@ class GDELTDownloader:
             logger.error(f"Error processing file {file_path.name}: {e}")
             self.conn.rollback()
 
+    def get_latest_timestamp(self) -> str:
+        """Get the latest timestamp from all tables"""
+        queries = [
+            "SELECT MAX(SQLDATE) FROM events",
+            "SELECT MAX(MentionTimeDate) FROM mentions",
+            "SELECT MAX(DATE) FROM gkg"
+        ]
+        
+        latest = "19700101000000"  # Default to earliest possible date
+        for query in queries:
+            try:
+                self.cur.execute(query)
+                result = self.cur.fetchone()[0]
+                if result and str(result) > latest:
+                    latest = str(result)
+            except psycopg2.Error as e:
+                logger.error(f"Error checking latest timestamp: {e}")
+                continue
+                
+        return latest
+
     def run(self):
         """Main execution method"""
         try:
+            # Get latest timestamp from database
+            latest_timestamp = self.get_latest_timestamp()
+            logger.info(f"Latest timestamp in database: {latest_timestamp}")
+            
+            # Get and filter files
             files = self.get_master_file()
+            filtered_files = [
+                f for f in files 
+                if len(f.split()) >= 3 and 
+                f.split()[2].split("/")[-1].split(".")[0] > latest_timestamp
+            ]
+            
+            logger.info(f"Processing {len(filtered_files)} new files")
+            
+            # Process filtered files
             with ThreadPoolExecutor() as executor:
-                list(tqdm(executor.map(self.process_file, files), total=len(files)))
+                list(tqdm(executor.map(self.process_file, filtered_files), 
+                        total=len(filtered_files)))
         finally:
             self.cur.close()
             self.conn.close()
