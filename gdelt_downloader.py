@@ -92,7 +92,7 @@ class GDELTDownloader:
 
     def _process_csv(self, file_path: Path, table_name: str):
         """Process CSV file and insert into database"""
-        print(f"Processing {file_path.name}...")
+        logger.info(f"Processing {file_path.name}...")
         try:
             for chunk in pd.read_csv(
                 file_path,
@@ -112,15 +112,15 @@ class GDELTDownloader:
                         query,
                         tuples,
                         template=None,
-                        page_size=CHUNK_SIZE
+                        page_size=int(CHUNK_SIZE/10)
                     )
                     self.conn.commit()
                 except psycopg2.Error as e:
-                    print(f"Error processing chunk: {e}")
+                    logger.error(f"Error processing chunk: {e}")
                     self.conn.rollback()  # Rollback the failed transaction
                     continue  # Skip to next chunk
         except Exception as e:
-            print(f"Error processing file {file_path.name}: {e}")
+            logger.error(f"Error processing file {file_path.name}: {e}")
             self.conn.rollback()
 
     def run(self):

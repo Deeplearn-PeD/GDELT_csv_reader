@@ -11,8 +11,8 @@ class TableSchema:
 EVENTS_SCHEMA = TableSchema(
     name="events",
     columns=[
-        "GLOBALEVENTID INTEGER",
-        "SQLDATE INTEGER",
+        "GLOBALEVENTID BIGINT",
+        "SQLDATE BIGINT",
         "MonthYear INTEGER",
         "Year INTEGER",
         "FractionDate FLOAT",
@@ -70,7 +70,7 @@ EVENTS_SCHEMA = TableSchema(
         "ActionGeo_Lat FLOAT",
         "ActionGeo_Long FLOAT",
         "ActionGeo_FeatureID TEXT",
-        "DATEADDED INTEGER",
+        "DATEADDED BIGINT",
         "SOURCEURL TEXT"
     ],
     primary_key="GLOBALEVENTID"
@@ -79,9 +79,9 @@ EVENTS_SCHEMA = TableSchema(
 MENTIONS_SCHEMA = TableSchema(
     name="mentions",
     columns=[
-        "GLOBALEVENTID INTEGER",
-        "EventTimeDate INTEGER",
-        "MentionTimeDate INTEGER",
+        "GLOBALEVENTID BIGINT",
+        "EventTimeDate BIGINT",
+        "MentionTimeDate BIGINT",
         "MentionType INTEGER",
         "MentionSourceName TEXT",
         "MentionIdentifier TEXT",
@@ -103,7 +103,7 @@ GKG_SCHEMA = TableSchema(
     name="gkg",
     columns=[
         "GKGRECORDID TEXT",
-        "DATE INTEGER",
+        "DATE BIGINT",
         "SourceCollectionIdentifier INTEGER",
         "SourceCommonName TEXT",
         "DocumentIdentifier TEXT",
