@@ -119,6 +119,12 @@ class GDELTDownloader:
                     logger.error(f"Error processing chunk: {e}")
                     self.conn.rollback()  # Rollback the failed transaction
                     continue  # Skip to next chunk
+            
+            # If we got here, the file was processed successfully
+            logger.info(f"Successfully processed {file_path.name}, deleting file...")
+            file_path.unlink()
+            logger.info(f"Deleted {file_path.name}")
+            
         except Exception as e:
             logger.error(f"Error processing file {file_path.name}: {e}")
             self.conn.rollback()
