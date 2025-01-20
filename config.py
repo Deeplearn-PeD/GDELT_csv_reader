@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 # Base configuration
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "gdelt.db"
 
